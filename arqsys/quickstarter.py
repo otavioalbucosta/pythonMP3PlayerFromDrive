@@ -7,6 +7,8 @@ from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+from oauth2client.service_account import ServiceAccountCredentials
+
 try:
     import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -20,7 +22,7 @@ SCOPES = 'https://www.googleapis.com/auth/drive'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive API Python Quickstart'
 authInst = auth.auth(SCOPES,CLIENT_SECRET_FILE,APPLICATION_NAME)
-credentials = authInst.getCredentials()
+credentials = ServiceAccountCredentials.from_json_keyfile_name('quickstart-1558462011668-5d480701a72f.json', SCOPES)
 
 http = credentials.authorize(httplib2.Http())
 drive_service = discovery.build('drive', 'v3', http=http)
@@ -77,4 +79,5 @@ def searchFile(size,query):
         for item in items:
             print(item)
             print('{0} ({1})'.format(item['name'], item['id']))
-downloadFile('1m6L-sPlERy3C_a68EhcvRqShsoypg5vp','alan.mp3')
+listFiles(10)
+searchFile()
