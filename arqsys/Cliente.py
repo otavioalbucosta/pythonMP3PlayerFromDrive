@@ -79,4 +79,4 @@ if __name__ == '__main__':
     signup_btn = Button(login_window, text="Cadastrar", command=lambda: (cadastro()), width=10)
     signup_btn.grid(row=2, column=1)
 
-    login_window.mainloop()
+login_window.mainloop()
