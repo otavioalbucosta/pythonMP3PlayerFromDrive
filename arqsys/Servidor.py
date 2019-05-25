@@ -3,7 +3,7 @@ from threading import *
 from wget import *
 from hashlib import *
 from json import *
-
+import quickstarter
 
 # # # CHECA CREDENCIAIS DO USUARIO # # #
 def autenticacao(client_socket, client_address):
@@ -27,6 +27,7 @@ def autenticacao(client_socket, client_address):
     except FileNotFoundError:
         with open("usuarios.json", "w") as lista_usuarios:
             dump(usuario, lista_usuarios)
+
 
 # # # CONECTA COM VARIOS CLIENTES # # #
 def espera_conexao():

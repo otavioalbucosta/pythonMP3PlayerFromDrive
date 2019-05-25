@@ -22,21 +22,22 @@ SCOPES = 'https://www.googleapis.com/auth/drive'
 CLIENT_SECRET_FILE = 'client_secret.json'
 APPLICATION_NAME = 'Drive API Python Quickstart'
 authInst = auth.auth(SCOPES,CLIENT_SECRET_FILE,APPLICATION_NAME)
-credentials = ServiceAccountCredentials.from_json_keyfile_name('quickstart-1558462011668-5d480701a72f.json', SCOPES)
+credentials = ServiceAccountCredentials.from_json_keyfile_name('quickstart-1558462011668-f4161eb37a4c.json', SCOPES)
 
 http = credentials.authorize(httplib2.Http())
 drive_service = discovery.build('drive', 'v3', http=http)
 
-def listFiles(size):
+def listFiles(size=100):
     results = drive_service.files().list(
-        pageSize=size,fields="nextPageToken, files(id, name)").execute()
+        pageSize=size,fields="nextPageToken, files(id, name, parents)").execute()
     items = results.get('files', [])
     if not items:
         print('No files found.')
     else:
         print('Files:')
         for item in items:
-            print('{0} ({1})'.format(item['name'], item['id']))
+            print('{0} ({1}) ({2})'.format(item['name'], item['id'],item['parents']))
+    return items
 
 def uploadFile(filename,filepath,mimetype):
     file_metadata = {'name': filename}
@@ -79,5 +80,55 @@ def searchFile(size,query):
         for item in items:
             print(item)
             print('{0} ({1})'.format(item['name'], item['id']))
-listFiles(10)
-searchFile()
+            return item
+
+def insertFileIntoFolder(folder_id,filename,filepath,mimetype):
+    file_metadata = {
+        'name': filename,
+        'parents': [folder_id]
+    }
+    media = MediaFileUpload(filepath,
+                            mimetype=mimetype,
+                            resumable=True)
+    file = drive_service.files().create(body=file_metadata,
+                                        media_body=media,
+                                        fields='id').execute()
+    print('File ID: %s' % file.get('id'))
+def deleteFile(file_id):
+    file = drive_service.files().delete(fileId=file_id).execute()
+def downloadFolderByID(folder_id):
+    list = listFiles()
+    foldername=''
+    for listfile in list:
+        if listfile['id']==folder_id:
+            try:
+                os.mkdir('{0}/{1}'.format(os.getcwd().replace('\\','/'),listfile['name']))
+            except FileExistsError:
+                print("Pasta já criada, cheque se há seus arquivos nela!")
+            foldername=listfile['name']
+    for itemlist in list:
+        if itemlist['parents'][0]==folder_id:
+            downloadFile(itemlist['id'],'{0}/{1}/{2}'.format(os.getcwd().replace('\\','/'),foldername,itemlist['name']))
+def downloadFolderByName(foldername):
+    folder = searchFile(100,"name = '{}'".format(foldername))
+    list = listFiles()
+    try:
+        os.mkdir('{0}/{1}'.format(os.getcwd().replace('\\', '/'), foldername))
+    except FileExistsError:
+        print("Pasta já criada, cheque se há seus arquivos nela!")
+    for itemlist in list:
+        if itemlist['parents'][0]==folder['id']:
+            downloadFile(itemlist['id'],'{0}/{1}/{2}'.format(os.getcwd().replace('\\','/'),foldername,itemlist['name']))
+
+def path():
+    return os.getcwd()
+print(path())
+
+
+
+
+
+
+
+
+
