@@ -1,6 +1,7 @@
 from socket import *
 from threading import *
 from wget import *
+from pickle import *
 
 
 # # # REGISTRA NOVO USUARIO # # #
@@ -10,9 +11,10 @@ def registro(client_socket):
     pswrd = client_socket.recv(MAX_BYTES)
     print("\033[1;33mUsuario: %s\t| Senha: %s" % (usrnm, pswrd))
     pswrd = str(pswrd)
-    usuario = {usrnm: {"usrnm": usrnm, "pswrd": pswrd}}
-    with open("usuarios.txt", "a") as lista_usuarios:
-        write(usuario, lista_usuarios)
+    usuario = {usrnm: pswrd}
+    print("\033[1;31mD: ", usuario)
+    with open("usuarios.pickle", "ab") as lista_usuarios:
+        dump(usuario, lista_usuarios)
 
 
 # # # CHECA CREDENCIAIS DO USUARIO # # #
@@ -22,19 +24,30 @@ def autenticacao(client_socket):
     pswrd = client_socket.recv(MAX_BYTES)
     print("\033[1;33mUsuario: %s\t| Senha: %s" % (usrnm, pswrd))
 
-    usuario = {usrnm: {"usrnm": usrnm, "pswrd": str(pswrd)}}
-
+    usuarios = {}
     try:
-        with open("usuarios.json", "r") as lista_usuarios:
-            usuarios = load(lista_usuarios)
-            if usrnm in usuarios:
-                if usuarios[usrnm]["pswrd"] == pswrd:
+        with open("usuarios.pickle", "rb") as lista_usuarios:
+            while True:
+                try:
+                    usuarios.update(load(lista_usuarios))
+                except EOFError:
+                    break
+            
+            try:
+                print("\033[1;31mpswrd = ", pswrd)
+                print("\033[1;31musuarios[usrnm] = ", usuarios[usrnm])
+                print("\033[1;31mpswrd == usuarios[usrnm] ? ",pswrd == usuarios[usrnm])
+                if pswrd  == usuarios[usrnm]:
+                    print("\033[1;33ma")
                     client_socket.send("{LOGIN_SUCCESS}".encode())
                 else:
+                    print("\033[1;33mb")
                     client_socket.send("{LOGIN_FAILED}".encode())
-            else:
-                client_socket.send("{ACCOUNT_NOT_FOUND}".encode())
+            except KeyError:
+                print("\033[1;33mc")
+                client_socket.send("ACCOUNT_NOT_FOUND}".encode())
     except FileNotFoundError:
+        print("\033[1;33md")
         client_socket.send("{ACCOUNT_NOT_FOUND}".encode())
 
 
@@ -73,4 +86,4 @@ if __name__ == '__main__':
     server_socket.listen(5)
     print("\033[1;33mEm espera...")
 
-    espera_conexao()
+espera_conexao()
