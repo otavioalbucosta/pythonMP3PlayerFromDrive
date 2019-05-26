@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 import httplib2
 import os, io
 from apiclient import discovery
@@ -29,14 +29,14 @@ drive_service = discovery.build('drive', 'v3', http=http)
 
 def listFiles(size=100):
     results = drive_service.files().list(
-        pageSize=size,fields="nextPageToken, files(id, name, parents)").execute()
+        pageSize=size,fields="nextPageToken, files(id, name, parents,mimeType)").execute()
     items = results.get('files', [])
     if not items:
         print('No files found.')
     else:
         print('Files:')
         for item in items:
-            print('{0} ({1}) ({2})'.format(item['name'], item['id'],item['parents']))
+            print('{0} ({1}) ({2}) {3}'.format(item['name'], item['id'],item['parents'],item['mimeType']))
     return items
 
 def uploadFile(filename,filepath,mimetype):
@@ -95,7 +95,11 @@ def insertFileIntoFolder(folder_id,filename,filepath,mimetype):
                                         fields='id').execute()
     print('File ID: %s' % file.get('id'))
 def deleteFile(file_id):
-    file = drive_service.files().delete(fileId=file_id).execute()
+    try:
+        file = drive_service.files().delete(fileId=file_id).execute()
+        print("Deleted")
+    except:
+        print("Error")
 def downloadFolderByID(folder_id):
     list = listFiles()
     foldername=''
@@ -119,16 +123,46 @@ def downloadFolderByName(foldername):
     for itemlist in list:
         if itemlist['parents'][0]==folder['id']:
             downloadFile(itemlist['id'],'{0}/{1}/{2}'.format(os.getcwd().replace('\\','/'),foldername,itemlist['name']))
+def uploadFolderMP3(folderpath,foldername):
+    files = os.listdir("{}/Songs".format(os.getcwd().replace("\\", '/')))
+    filesdrive = listFiles()
+    temp = ''
+    folid = ''
+    for fil in filesdrive:
+        print(fil['name'])
+        if fil['name'] == foldername and fil['mimeType']=='application/vnd.google-apps.folder':
 
-def path():
-    return os.getcwd()
-print(path())
+            folid = fil['id']
+            print(folid)
+            temp=1
+            break
+        else:
+            temp=0
+    if temp==1:
+        for filename in files:
+            insertFileIntoFolder(folid,filename,os.getcwd().replace("\\","/")+"{0}/{1}".format(folderpath,filename),'music/mp3')
+    else:
+        createFolder(foldername)
+        for filename in files:
+            insertFileIntoFolder(folid, filename, os.getcwd().replace("\\", "/") + "{0}/{1}".format(folderpath, filename),'music/mp3')
 
-
-
-
-
-
+def moveFileBtwnFolder(file_id,newfolder_id):
+    # Retrieve the existing parents to remove
+    file = drive_service.files().get(fileId=file_id,
+                                     fields='parents').execute()
+    previous_parents = ",".join(file.get('parents'))
+    # Move the file to the new folder
+    file = drive_service.files().update(fileId=file_id,
+                                        addParents=newfolder_id,
+                                        removeParents=previous_parents,
+                                        fields='id, parents').execute()
+def downloadFileByName(filename,filepath):
+    list = listFiles()
+    getid=''
+    for itemslist in list:
+        if filename == itemslist['name']:
+            getid = itemslist['id']
+    downloadFile(getid,filepath)
 
 
 
