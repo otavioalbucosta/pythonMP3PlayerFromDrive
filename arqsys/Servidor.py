@@ -1,41 +1,72 @@
 from socket import *
 from threading import *
 from wget import *
-from hashlib import *
-from json import *
-import quickstarter
+from pickle import *
+
+
+# # # REGISTRA NOVO USUARIO # # #
+def registro(client_socket):
+    print("\033[1;33m------ REGISTRO ------")
+    usrnm = client_socket.recv(MAX_BYTES).decode()
+    pswrd = client_socket.recv(MAX_BYTES)
+    print("\033[1;33mUsuario: %s\t| Senha: %s" % (usrnm, pswrd))
+    pswrd = str(pswrd)
+    usuario = {usrnm: pswrd}
+    print("\033[1;31mD: ", usuario)
+    with open("usuarios.pickle", "ab") as lista_usuarios:
+        dump(usuario, lista_usuarios)
+
 
 # # # CHECA CREDENCIAIS DO USUARIO # # #
-def autenticacao(client_socket, client_address):
-    msg = client_socket.recv(MAX_BYTES).decode().split()
-    usrnm = msg[0]
-    pswrd = msg[1]
-    print(usrnm, "está conectado(o)")
+def autenticacao(client_socket):
+    print("\033[1;33m ------ AUTENTICAÇÃO ------")
+    usrnm = client_socket.recv(MAX_BYTES).decode()
+    pswrd = client_socket.recv(MAX_BYTES)
 
-    usuario = {usrnm: {"usrnm": usrnm, "pswrd": pswrd}}
+    usuarios = {}
+    print("\033[1;31m usrnm = ", usrnm)
+    print("\033[1;31m pswrd = ", pswrd)
     try:
-        with open("usuarios.json", "r") as lista_usuarios:
-            usuarios = load(lista_usuarios)
-            if usrnm in lista_usuarios:
-                if lista_usuarios[usrnm]["pswrd"] == pswrd:
-                    print("acertô, mizerávi")
+        with open("usuarios.pickle", "rb") as lista_usuarios:
+            while True:
+                try:
+                    usuarios.update(load(lista_usuarios))
+                except EOFError:
+                    break
+
+            try:
+                if str(pswrd) == usuarios[usrnm]:
+                    client_socket.send("{LOGIN_SUCCESS}".encode())
                 else:
-                    print("ta errado, otário!")
-            else:
-                with open("usuarios.json", "r") as lista_usuarios:
-                    dump(usuario, lista_usuarios)
-    except FileNotFoundError:
-        with open("usuarios.json", "w") as lista_usuarios:
-            dump(usuario, lista_usuarios)
+                    client_socket.send("{LOGIN_FAILED}".encode())
+            except KeyError:
+                client_socket.send("{ACCOUNT_NOT_FOUND}".encode())
+    except KeyError:
+        client_socket.send("{ACCOUNT_NOT_FOUND}".encode())
+
+
+# # # ESPERA A AÇÃO DO CLIENTE # # #
+def aguarda_requisicao(client_socket):
+    while True:
+        request = client_socket.recv(MAX_BYTES).decode()
+
+        if request == "{LOGIN_REQUEST}":
+            print("\033[1;33m" + request)
+            client_socket.send("{REQUEST_ACCEPTED}".encode())
+            autenticacao(client_socket)
+        elif request == "{SIGN_IN_REQUEST}":
+            print("\033[1;33m" + request)
+            client_socket.send("{REQUEST_ACCEPTED}".encode())
+            registro(client_socket)
 
 
 # # # CONECTA COM VARIOS CLIENTES # # #
 def espera_conexao():
     while True:
         client_socket, client_address = server_socket.accept()
-        print("Conectado com", client_address)
+        print("\033[1;33mConectado com", client_address)
 
-        t = Thread(target=lambda: (autenticacao(client_socket, client_address)))
+        t = Thread(target=lambda: (aguarda_requisicao(client_socket)))
         t.start()
 
 
@@ -47,5 +78,6 @@ if __name__ == '__main__':
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(SERVER_ADDRESS)
     server_socket.listen(5)
+    print("\033[1;33mEm espera...")
 
-    espera_conexao()
+espera_conexao()
