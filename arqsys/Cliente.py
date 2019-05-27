@@ -43,17 +43,16 @@ def cadastro():
         client_socket.send(usrnm.encode())
         client_socket.send(pswrd)
 def recvmusic(songname):
-    end = "ENDFILE".encode('utf-8')
-    dec = client_socket.recv(1024).decode('utf8')
-    if dec == 'ready':
-        with open("ClientSongs/{}.mp3".format(songname), "wb+") as f:
-            print('file opened')
-            while True:
-                data = client_socket.recv(1024)
-                if data==end:
-                    break
-                f.write(data)
-            f.close()
+    time.sleep(3)
+    end = "ENDFILE".encode()
+    with open("ClientSongs/{}.mp3".format(songname), "wb") as f:
+        print('file opened')
+        while True:
+            data = client_socket.recv(1024)
+            print(data)
+            if not data:
+                break
+            f.write(data)
 
 # AQUI TODA VEZ QUE VOCE CLICA NUMA MUSICA NO LISTBOX ELE VAI VER SE A MUSICA VAI ESTAR BAIXADA
 # SE NAO ELE RECEBE DO SERVER
@@ -66,7 +65,7 @@ def next1(*args,**kwargs):
         tmusic.start()
 
     else:
-        client_socket.send("{}.mp3".format(nextsong).encode('utf-8'))
+        client_socket.send("{}.mp3".format(nextsong).encode())
         recvthd= Thread(target= lambda :recvmusic(nextsong))
         recvthd.start()
 
@@ -79,20 +78,18 @@ def onselect(*args, **kwargs):
         tmusic.start()
 
     else:
-        client_socket.send("{}.mp3".format(songname).encode('utf-8'))
+        client_socket.send("{}.mp3".format(songname).encode())
         recvthd= Thread(target= lambda :recvmusic(songname))
         recvthd.start()
-        recvthd.join()
-        tmusic = Thread(target=lambda: playmusic('ClientSongs/{}.mp3'.format(songname)))
-        tmusic.start()
+        root.destroy()
+
+
 
 def playpause(i):
-
     if i%2 == 0:
         pygame.mixer.music.pause()
         i=i+1
     else:
-
         pygame.mixer.music.unpause()
         i=i+1
 

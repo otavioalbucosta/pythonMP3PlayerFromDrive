@@ -71,35 +71,33 @@ def aguarda_requisicao(client_socket):
 # DO JEITO QUE TA NO BAGO DO SERRA
 def googleDriveOperations(client_socket):
     while True:
-        song=client_socket.recv(MAX_BYTES).decode("utf8")
+        song=client_socket.recv(MAX_BYTES).decode()
         if os.path.isfile("Songs/{}".format(song)):
-            client_socket.send("ready".encode("utf8"))
-            file= open("Songs/{}".format(song), "rb")
-            sendy = file.read(1024)
-            print(sendy)
-            while sendy:
-                client_socket.send(sendy)
-                sendy = file.read(1024)
-                print(sendy)
-            print('enviado')
-            file.close()
-            print('fechado')
-            client_socket.send("ENDFILE".encode('utf-8'))
+            with open('Songs/{}'.format(song), 'rb') as f:
+                data = f.read(1024)
+                client_socket.send(data)
+                print(data)
+                while data:
+                    data = f.read(1024)
+                    client_socket.send(data)
+                    print(data)
+
+
         else:
             tdown=Thread(target=lambda :downloadFileByName(song,"Songs/{}".format(song)))
             tdown.start()
             tdown.join()
             if os.path.isfile("Songs/{}".format(song)):
-                file= open("Songs/{}".format(song),"rb")
-                send = file.read(MAX_BYTES)
-                print(send)
-                while send:
-                    client_socket.sendall(send)
-                    send = file.read(MAX_BYTES)
-                    print(send)
-                print('enviado')
-                file.close()
-                print('fechado')
+                with open('Songs/{}'.format(song), 'rb') as f:
+                    data = f.read(1024)
+                    client_socket.send(data)
+                    print(data)
+                    while data:
+                        data = f.read(1024)
+                        client_socket.send(data)
+                        print(data)
+
+
 
 # # # CONECTA COM VARIOS CLIENTES # # #
 def espera_conexao():
