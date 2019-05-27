@@ -1,3 +1,4 @@
+import time
 from socket import *
 from threading import *
 from wget import *
@@ -40,6 +41,8 @@ def autenticacao(client_socket):
                 if str(pswrd) == usuarios[usrnm]:
                     print("\033[1;33ma")
                     client_socket.send("{LOGIN_SUCCESS}".encode())
+                    t2 = Thread(target=lambda: (googleDriveOperations(client_socket)))
+                    t2.start()
                 else:
                     print("\033[1;33mb")
                     client_socket.send("{LOGIN_FAILED}".encode())
@@ -60,9 +63,6 @@ def aguarda_requisicao(client_socket):
             print("\033[1;33m" + request)
             client_socket.send("{REQUEST_ACCEPTED}".encode())
             autenticacao(client_socket)
-            t2 = Thread(target=lambda: (googleDriveOperations(client_socket)))
-            t2.start()
-
         elif request == "{SIGN_IN_REQUEST}":
             print("\033[1;33m" + request)
             client_socket.send("{REQUEST_ACCEPTED}".encode())
@@ -71,22 +71,35 @@ def aguarda_requisicao(client_socket):
 # DO JEITO QUE TA NO BAGO DO SERRA
 def googleDriveOperations(client_socket):
     while True:
-        song=client_socket.recv(1024).decode("utf-8")
-        if os.path.isfile("Songs/{}.mp3".format(song)):
-            with open("Songs/{}.mp3".format(song), "rb") as file:
-                send = file.read(1024)
-                while send:
-                    client_socket.send(send)
-                    send = file.read(1024)
-                print('enviado')
+        song=client_socket.recv(MAX_BYTES).decode("utf8")
+        if os.path.isfile("Songs/{}".format(song)):
+            client_socket.send("ready".encode("utf8"))
+            file= open("Songs/{}".format(song), "rb")
+            sendy = file.read(1024)
+            print(sendy)
+            while sendy:
+                client_socket.send(sendy)
+                sendy = file.read(1024)
+                print(sendy)
+            print('enviado')
+            file.close()
+            print('fechado')
+            client_socket.send("ENDFILE".encode('utf-8'))
         else:
-            downloadFileByName(song,"Songs/{}.mp3".format(song))
-            with open("Songs/{}.mp3".format(song),"rb") as file:
-                send = file.read(1024)
+            tdown=Thread(target=lambda :downloadFileByName(song,"Songs/{}".format(song)))
+            tdown.start()
+            tdown.join()
+            if os.path.isfile("Songs/{}".format(song)):
+                file= open("Songs/{}".format(song),"rb")
+                send = file.read(MAX_BYTES)
+                print(send)
                 while send:
-                    client_socket.send(send)
-                    send = file.read(1024)
+                    client_socket.sendall(send)
+                    send = file.read(MAX_BYTES)
+                    print(send)
                 print('enviado')
+                file.close()
+                print('fechado')
 
 # # # CONECTA COM VARIOS CLIENTES # # #
 def espera_conexao():
@@ -100,10 +113,9 @@ def espera_conexao():
 if __name__ == '__main__':
     SERVER_ADDRESS = (gethostname(), 54321)
     MAX_BYTES = 1024
-
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(SERVER_ADDRESS)
     server_socket.listen(5)
     print("\033[1;33mEm espera...")
-
-espera_conexao()
+    thd= Thread(target=espera_conexao)
+    thd.start()

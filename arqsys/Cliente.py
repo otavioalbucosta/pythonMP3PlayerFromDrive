@@ -1,15 +1,31 @@
 import os
+import time
 from socket import *
 from tkinter import *
 from hashlib import *
-from logging import *
 from tkinter import ttk
-
-import pygame as pygame
+from threading import Thread
+import pygame
 
 import quickstarter
 
+pygame.mixer.init(48000, -16, 1, 1024)
 
+class Pause(object):
+
+    def __init__(self):
+        self.paused = pygame.mixer.music.get_busy()
+
+    def toggle(self):
+        if self.paused:
+            pygame.mixer.music.unpause()
+        if not self.paused:
+            pygame.mixer.music.pause()
+        self.paused = not self.paused
+
+# Instantiate.
+
+PAUSE = Pause()
 # # # CADASTRO # # #
 def cadastro():
     usrnm = usrnm_entry.get()
@@ -26,26 +42,68 @@ def cadastro():
     if answr == "{REQUEST_ACCEPTED}":
         client_socket.send(usrnm.encode())
         client_socket.send(pswrd)
+def recvmusic(songname):
+    end = "ENDFILE".encode('utf-8')
+    dec = client_socket.recv(1024).decode('utf8')
+    if dec == 'ready':
+        with open("ClientSongs/{}.mp3".format(songname), "wb+") as f:
+            print('file opened')
+            while True:
+                data = client_socket.recv(1024)
+                if data==end:
+                    break
+                f.write(data)
+            f.close()
 
 # AQUI TODA VEZ QUE VOCE CLICA NUMA MUSICA NO LISTBOX ELE VAI VER SE A MUSICA VAI ESTAR BAIXADA
 # SE NAO ELE RECEBE DO SERVER
+
+def next1(*args,**kwargs):
+    nextsong=temp[Listbox1.curselection()[0]+1]
+    print(nextsong)
+    if os.path.isfile('ClientSongs/{}.mp3'.format(nextsong)):
+        tmusic = Thread(target=lambda :playmusic('ClientSongs/{}.mp3'.format(nextsong)))
+        tmusic.start()
+
+    else:
+        client_socket.send("{}.mp3".format(nextsong).encode('utf-8'))
+        recvthd= Thread(target= lambda :recvmusic(nextsong))
+        recvthd.start()
+
 def onselect(*args, **kwargs):
 
     songname=temp[Listbox1.curselection()[0]]
     print(temp[Listbox1.curselection()[0]])
     if os.path.isfile('ClientSongs/{}.mp3'.format(songname)):
-        pygame.mixer.music.load('ClientSongs/{}.mp3'.format(songname))
+        tmusic = Thread(target=lambda :playmusic('ClientSongs/{}.mp3'.format(songname)))
+        tmusic.start()
+
     else:
         client_socket.send("{}.mp3".format(songname).encode('utf-8'))
-        with open("ClientSongs/{}.mp3".format(songname),"wb") as file:
-            print('file opened')
-            while True:
-                data = client_socket.recv(1024)
-                if not data:
-                    break
-                file.write(data)
-        pygame.mixer.music.load('ClientSongs/{}.mp3'.format(songname))
-        pygame.mixer.music.play()
+        recvthd= Thread(target= lambda :recvmusic(songname))
+        recvthd.start()
+        recvthd.join()
+        tmusic = Thread(target=lambda: playmusic('ClientSongs/{}.mp3'.format(songname)))
+        tmusic.start()
+
+def playpause(i):
+
+    if i%2 == 0:
+        pygame.mixer.music.pause()
+        i=i+1
+    else:
+
+        pygame.mixer.music.unpause()
+        i=i+1
+
+
+def playmusic(filemusic):
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.stop()
+        mp3_pause=True
+    pygame.mixer.music.load(filemusic)
+    pygame.mixer.music.play()
+    mp3_pause=False
 
 
 # # # LOGIN # # #
@@ -108,7 +166,7 @@ login_window.mainloop()
 
 # DAQUI PRA BAIXO É O TKINTER DO PLAYER DE MUSICA
 root = Tk()
-pygame.mixer.init()
+i = 0
 root.geometry("600x450+445+140")
 root.title("New Toplevel")
 root.configure(background="#d9d9d9")
@@ -192,6 +250,7 @@ Button2.configure(highlightbackground="#d9d9d9")
 Button2.configure(highlightcolor="black")
 Button2.configure(pady="0")
 Button2.configure(text='''ll / ▷''')
+Button2.configure(command=lambda :PAUSE.toggle())
 
 Button3 = Button(root)
 Button3.place(relx=0.833, rely=0.756, height=34, width=41)
