@@ -43,16 +43,16 @@ def cadastro():
         client_socket.send(usrnm.encode())
         client_socket.send(pswrd)
 def recvmusic(songname):
-    time.sleep(3)
-    end = "ENDFILE".encode()
-    with open("ClientSongs/{}.mp3".format(songname), "wb") as f:
-        print('file opened')
-        while True:
-            data = client_socket.recv(1024)
-            print(data)
-            if not data:
-                break
-            f.write(data)
+    f= open("ClientSongs/{}.mp3".format(songname), "wb")
+    print('file opened')
+    while True:
+        data = client_socket.recv(1024)
+        if "PQPTIU".encode() == data:
+            break
+        f.write(data)
+    print(data)
+    f.close()
+    client_socket.close()
 
 # AQUI TODA VEZ QUE VOCE CLICA NUMA MUSICA NO LISTBOX ELE VAI VER SE A MUSICA VAI ESTAR BAIXADA
 # SE NAO ELE RECEBE DO SERVER
@@ -65,7 +65,7 @@ def next1(*args,**kwargs):
         tmusic.start()
 
     else:
-        client_socket.send("{}.mp3".format(nextsong).encode())
+        client_socket.send("{}".format(nextsong).encode())
         recvthd= Thread(target= lambda :recvmusic(nextsong))
         recvthd.start()
 
@@ -81,7 +81,9 @@ def onselect(*args, **kwargs):
         client_socket.send("{}.mp3".format(songname).encode())
         recvthd= Thread(target= lambda :recvmusic(songname))
         recvthd.start()
-        root.destroy()
+        if recvthd.is_alive()==False:
+            print("not alive")
+
 
 
 

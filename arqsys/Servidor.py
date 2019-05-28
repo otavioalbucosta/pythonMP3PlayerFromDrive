@@ -71,9 +71,27 @@ def aguarda_requisicao(client_socket):
 # DO JEITO QUE TA NO BAGO DO SERRA
 def googleDriveOperations(client_socket):
     while True:
-        song=client_socket.recv(MAX_BYTES).decode()
-        if os.path.isfile("Songs/{}".format(song)):
-            with open('Songs/{}'.format(song), 'rb') as f:
+        song = client_socket.recv(1024)
+        song=song.decode()
+        if os.path.isfile("Songs/%s.mp3"%(song)):
+
+            f = open("Songs/%s.mp3"%(song),'rb')
+            data = f.read()
+            client_socket.send(data)
+            print(data)
+            while data:
+                data = f.read()
+                client_socket.send(data)
+                print(data)
+            client_socket.send("PQPTIU".encode())
+            f.close()
+        else:
+
+            tdown=Thread(target=lambda :downloadFileByName(song,"Songs/{}".format(song)))
+            tdown.start()
+            tdown.join()
+            if os.path.isfile("Songs/%s.mp3"%(song)):
+                f= open("Songs/%s.mp3"%(song), 'rb')
                 data = f.read(1024)
                 client_socket.send(data)
                 print(data)
@@ -81,21 +99,8 @@ def googleDriveOperations(client_socket):
                     data = f.read(1024)
                     client_socket.send(data)
                     print(data)
-
-
-        else:
-            tdown=Thread(target=lambda :downloadFileByName(song,"Songs/{}".format(song)))
-            tdown.start()
-            tdown.join()
-            if os.path.isfile("Songs/{}".format(song)):
-                with open('Songs/{}'.format(song), 'rb') as f:
-                    data = f.read(1024)
-                    client_socket.send(data)
-                    print(data)
-                    while data:
-                        data = f.read(1024)
-                        client_socket.send(data)
-                        print(data)
+                client_socket.send("PQPTIU".encode())
+                f.close()
 
 
 
