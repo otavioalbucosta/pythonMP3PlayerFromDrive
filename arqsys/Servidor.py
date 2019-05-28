@@ -80,38 +80,42 @@ def googleDriveOperations():
                 break
             except ConnectionError:
                 a=0
+        try:
 
-        song = servcli.recv(MAX_BYTES).decode("utf8")
-        if os.path.isfile("Songs/{}".format(song)):
-            servcli.send("ready".encode("utf8"))
-            file= open("Songs/{}".format(song), "rb")
-            sendy = file.read(1024)
-            print(sendy)
-            while sendy:
-                servcli.send(sendy)
-                sendy = file.read(1024)
-                print(sendy)
-            print('enviado')
-            file.close()
-            servcli.close()
-            print('fechado')
-        else:
-            tdown=Thread(target=lambda :downloadFileByName(song,"Songs/{}".format(song)))
-            tdown.start()
-            tdown.join()
+            song = servcli.recv(MAX_BYTES).decode("utf8")
             if os.path.isfile("Songs/{}".format(song)):
                 servcli.send("ready".encode("utf8"))
-                file= open("Songs/{}".format(song),"rb")
-                send = file.read(MAX_BYTES)
-                print(send)
-                while send:
-                    servcli.send(send)
-                    send = file.read(MAX_BYTES)
-                    print(send)
+                file = open("Songs/{}".format(song), "rb")
+                sendy = file.read(1024)
+                print(sendy)
+                while sendy:
+                    servcli.send(sendy)
+                    sendy = file.read(1024)
+                    print(sendy)
                 print('enviado')
                 file.close()
                 servcli.close()
                 print('fechado')
+            else:
+                tdown = Thread(target=lambda: downloadFileByName(song, "Songs/{}".format(song)))
+                tdown.start()
+                tdown.join()
+                if os.path.isfile("Songs/{}".format(song)):
+                    servcli.send("ready".encode("utf8"))
+                    file = open("Songs/{}".format(song), "rb")
+                    send = file.read(MAX_BYTES)
+                    print(send)
+                    while send:
+                        servcli.send(send)
+                        send = file.read(MAX_BYTES)
+                        print(send)
+                    print('enviado')
+                    file.close()
+                    servcli.close()
+                    print('fechado')
+        except ConnectionResetError:
+            a=1
+
 
 # # # CONECTA COM VARIOS CLIENTES # # #
 def espera_conexao():

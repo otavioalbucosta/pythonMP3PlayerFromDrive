@@ -66,6 +66,7 @@ def recvmusic(songname):
 
 def next1(*args,**kwargs):
     nextsong=temp[Listbox1.curselection()[0]+1]
+    if temp.__len__()
     Listbox1.select
     print(nextsong)
     if os.path.isfile('ClientSongs/{}.mp3'.format(nextsong)):
