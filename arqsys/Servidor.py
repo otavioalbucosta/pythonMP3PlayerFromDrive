@@ -79,7 +79,7 @@ def googleDriveOperations():
                 servcli.connect(('localhost',12345))
                 break
             except ConnectionError:
-                a=0
+                pass
         try:
 
             song = servcli.recv(MAX_BYTES).decode("utf8")
@@ -114,7 +114,7 @@ def googleDriveOperations():
                     servcli.close()
                     print('fechado')
         except ConnectionResetError:
-            a=1
+            pass
 
 
 # # # CONECTA COM VARIOS CLIENTES # # #

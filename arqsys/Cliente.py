@@ -64,10 +64,14 @@ def recvmusic(songname):
 # AQUI TODA VEZ QUE VOCE CLICA NUMA MUSICA NO LISTBOX ELE VAI VER SE A MUSICA VAI ESTAR BAIXADA
 # SE NAO ELE RECEBE DO SERVER
 
-def next1(*args,**kwargs):
-    nextsong=temp[Listbox1.curselection()[0]+1]
-    if temp.__len__()
-    Listbox1.select
+def next1(*args):
+    Listbox1.select_clear(posicao.get())
+    if posicao.get() < temp.__len__()-1:
+        posicao.set(posicao.get() +1)
+    else:
+        posicao.set(0)
+    nextsong=temp[posicao.get()]
+    Listbox1.select_set(posicao.get())
     print(nextsong)
     if os.path.isfile('ClientSongs/{}.mp3'.format(nextsong)):
         tmusic = Thread(target=lambda :playmusic('ClientSongs/{}.mp3'.format(nextsong)))
@@ -78,9 +82,29 @@ def next1(*args,**kwargs):
         recvthd= Thread(target= lambda :recvmusic(nextsong))
         recvthd.start()
 
-def onselect(*args, **kwargs):
 
-    songname=temp[Listbox1.curselection()[0]]
+def rev1(*args):
+    Listbox1.select_clear(posicao.get())
+    if posicao.get() == 0 :
+        posicao.set(len(temp)-1)
+    else:
+        posicao.set(posicao.get()-1)
+    nextsong=temp[posicao.get()]
+    Listbox1.select_set(posicao.get())
+    print(nextsong)
+    if os.path.isfile('ClientSongs/{}.mp3'.format(nextsong)):
+        tmusic = Thread(target=lambda :playmusic('ClientSongs/{}.mp3'.format(nextsong)))
+        tmusic.start()
+
+    else:
+        client_socket.send("{}.mp3".format(nextsong).encode('utf-8'))
+        recvthd= Thread(target= lambda :recvmusic(nextsong))
+        recvthd.start()
+
+
+def onselect(*args):
+    posicao.set(Listbox1.curselection()[0])
+    songname = temp[posicao.get()]
     print(temp[Listbox1.curselection()[0]])
     if os.path.isfile('ClientSongs/{}.mp3'.format(songname)):
         Thread(target=lambda :playmusic('ClientSongs/{}.mp3'.format(songname))).start()
@@ -108,6 +132,7 @@ def playmusic(filemusic):
         mp3_pause=True
     pygame.mixer.music.load(filemusic)
     pygame.mixer.music.play()
+    pygame.mixer.music.set_volume(1)
     music = MP3(filemusic)
     TScale1.configure(to=music.info.length)
     mp3_pause=False
@@ -183,7 +208,8 @@ root.title("New Toplevel")
 root.configure(background="#d9d9d9")
 root.configure(highlightbackground="#d9d9d9")
 root.configure(highlightcolor="black")
-
+posicao = IntVar()
+posicao.set(0)
 temp = []
 for item in quickstarter.listFiles():
     if '.mp3' in item['name']:
@@ -248,6 +274,7 @@ Button1.configure(highlightbackground="#d9d9d9")
 Button1.configure(highlightcolor="black")
 Button1.configure(pady="0")
 Button1.configure(text='''⧏⧏''')
+Button1.configure(command=rev1)
 
 Button2 = Button(root)
 Button2.place(relx=0.65, rely=0.756, height=34, width=67)
@@ -274,6 +301,7 @@ Button3.configure(highlightbackground="#d9d9d9")
 Button3.configure(highlightcolor="black")
 Button3.configure(pady="0")
 Button3.configure(text='''⧐⧐''')
+Button3.configure(command=next1)
 
 Listbox1 = Listbox(root)
 Listbox1.place(relx=0.0, rely=0.0, relheight=0.982, relwidth=0.373)
@@ -284,10 +312,11 @@ Listbox1.configure(foreground="#000000")
 Listbox1.configure(takefocus="0")
 Listbox1.configure(width=224)
 Listbox1.configure(selectmode='browse')
+
 sb = Scrollbar(Listbox1, orient="vertical")
 sb.config(command=Listbox1.yview)
 sb.pack(side='right', fill='y')
 Listbox1.configure(listvariable=list)
-Listbox1.bind('<<ListboxSelect>>', onselect)
+Listbox1.bind('<<ListboxSelect>>',onselect)
 root.mainloop()
 

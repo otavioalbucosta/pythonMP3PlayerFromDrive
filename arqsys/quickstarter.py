@@ -68,6 +68,7 @@ def createFolder(name):
     file = drive_service.files().create(body=file_metadata,
                                         fields='id').execute()
     print ('Folder ID: %s' % file.get('id'))
+    return file.get('id')
 
 def searchFile(size,query):
     results = drive_service.files().list(
@@ -124,7 +125,7 @@ def downloadFolderByName(foldername):
         if itemlist['parents'][0]==folder['id']:
             downloadFile(itemlist['id'],'{0}/{1}/{2}'.format(os.getcwd().replace('\\','/'),foldername,itemlist['name']))
 def uploadFolderMP3(folderpath,foldername):
-    files = os.listdir("{}/Songs".format(os.getcwd().replace("\\", '/')))
+    files = os.listdir("{}/Newongs".format(os.getcwd().replace("\\", '/')))
     filesdrive = listFiles()
     temp = ''
     folid = ''
@@ -142,7 +143,7 @@ def uploadFolderMP3(folderpath,foldername):
         for filename in files:
             insertFileIntoFolder(folid,filename,os.getcwd().replace("\\","/")+"{0}/{1}".format(folderpath,filename),'music/mp3')
     else:
-        createFolder(foldername)
+        folid = createFolder(foldername)
         for filename in files:
             insertFileIntoFolder(folid, filename, os.getcwd().replace("\\", "/") + "{0}/{1}".format(folderpath, filename),'music/mp3')
 

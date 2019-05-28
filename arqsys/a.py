@@ -1,4 +1,2 @@
-import wget
-
-wget.download('http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg',
-              '/Users/Alunos/PycharmProjects/arqsys/a.jpg')
+lista = [1,2,3]
+print(len(lista))
